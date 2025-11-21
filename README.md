@@ -11,16 +11,10 @@
 ### 安装依赖
 ```bash
 pip install -r requirements.txt
+pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
 ```
 
-### 主要依赖
-- PyTorch 1.13.0+
-- torchvision 0.14.0+
-- scikit-learn 1.2.0+
-- pandas 1.5.0+
-- NumPy 1.22.0+
-- Pillow 9.3.0+
-- tqdm 4.64.0+
+
 
 ## 数据准备
 
@@ -30,15 +24,10 @@ pip install -r requirements.txt
 Skin cancer/
 ├── dataset/
 │   └── Skin Cancer/
-│       ├── akiec/
-│       ├── bcc/
-│       ├── bkl/
-│       ├── df/
-│       ├── mel/
-│       └── vasc/
-├── main.py
-├── requirements.txt
-└── README.md
+│   └── HAM10000_metadata.csv
+├── checkpoint/
+├── model/
+└── main.py
 ```
 
 ## 训练模型
