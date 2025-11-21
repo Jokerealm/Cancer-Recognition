@@ -512,8 +512,8 @@ def main():
     )
     
     # 保存模型
-    torch.save(model.state_dict(), 'model/skin_cancer_model.pth')
-    print('Model saved to model/skin_cancer_model.pth')
+    torch.save(model.state_dict(), 'checkpoint/skin_cancer_model.pth')
+    print('Model saved to checkpoint/skin_cancer_model.pth')
     
     # 可视化训练历史
     plot_training_history(history)
