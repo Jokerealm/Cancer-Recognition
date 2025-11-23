@@ -14,6 +14,7 @@ import time
 from tqdm import tqdm
 import torch.backends.cudnn as cudnn
 from torch.cuda.amp import autocast, GradScaler
+from model.mamba_model import create_mamba_model
 
 # 设置全局device变量
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -172,9 +173,9 @@ def create_model(model_name='resnet50', num_classes=7, pretrained=True):
     """
     创建预训练的分类模型
     Args:
-        model_name: 模型名称 ('resnet50', 'densenet121', 'efficientnet_b0')
+        model_name: 模型名称 ('resnet50', 'densenet121', 'efficientnet_b0', 'mamba')
         num_classes: 类别数量
-        pretrained: 是否使用预训练权重
+        pretrained: 是否使用预训练权重（不适用于Mamba模型）
     Returns:
         配置好的模型
     """
@@ -197,6 +198,10 @@ def create_model(model_name='resnet50', num_classes=7, pretrained=True):
         else:
             model = models.efficientnet_b0(weights=None)
         model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
+    elif model_name == 'mamba':
+        # 创建Mamba模型
+        model = create_mamba_model(num_classes=num_classes)
+        print("Created Mamba model for image classification")
     else:
         raise ValueError(f"Unsupported model: {model_name}")
     
@@ -244,7 +249,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
         running_corrects = 0
         total_samples = 0
         
-        for images, labels in tqdm(train_loader):
+        for i, (images, labels) in enumerate(tqdm(train_loader)):
             images = images.to(DEVICE)
             labels = labels.to(DEVICE)
             
@@ -259,8 +264,16 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
                         _, preds = torch.max(outputs, 1)
                         loss = criterion(outputs, labels)
                     
+                    # 检查损失是否为NaN
+                    if torch.isnan(loss):
+                        print(f"NaN loss detected at epoch {epoch}, batch {i}")
+                        continue
+                    
                     # 反向传播和优化（混合精度）
                     scaler.scale(loss).backward()
+                    # 梯度裁剪，防止梯度爆炸
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                     scaler.step(optimizer)
                     scaler.update()
                 else:
@@ -268,8 +281,15 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
                     _, preds = torch.max(outputs, 1)
                     loss = criterion(outputs, labels)
                     
-                    # 反向传播和优化
+                    # 检查损失是否为NaN
+                    if torch.isnan(loss):
+                        print(f"NaN loss detected at epoch {epoch}, batch {i}")
+                        continue
+                    
+                    # 反向传播和优化，添加梯度裁剪
                     loss.backward()
+                    # 梯度裁剪，防止梯度爆炸
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                     optimizer.step()
             
             # 统计
@@ -483,14 +503,14 @@ def main():
     print(f'Validation samples: {len(val_loader.dataset)}')
     print(f'Test samples: {len(test_loader.dataset)}')
     
-    # 创建模型
+    # 创建模型 - 可以选择'resnet50', 'densenet121', 'efficientnet_b0'或'mamba'
     print('Creating model...')
-    model = create_model(model_name='resnet50', num_classes=7)
+    model = create_model(model_name='mamba', num_classes=7)  # 使用Mamba模型
     
     # 损失函数（考虑类别不平衡）
     criterion = nn.CrossEntropyLoss()
     
-    # 优化器
+    # 优化器 - 使用更小的学习率和权重衰减以提高Mamba模型训练稳定性
     optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-5)
     
     # 学习率调度器
