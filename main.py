@@ -15,6 +15,7 @@ import time
 from tqdm import tqdm
 import torch.backends.cudnn as cudnn
 from torch.cuda.amp import autocast, GradScaler
+from model.mamba_model import create_mamba_model
 # from model.mamba_model import create_mamba_model
 
 # 设置全局device变量
