@@ -16,7 +16,6 @@ from tqdm import tqdm
 import torch.backends.cudnn as cudnn
 from torch.cuda.amp import autocast, GradScaler
 from model.mamba_model import create_mamba_model
-# from model.mamba_model import create_mamba_model
 
 # 设置全局device变量
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -917,6 +916,7 @@ def main():
     print(f'Validation samples: {len(val_loader.dataset)}')
     print(f'Test samples: {len(test_loader.dataset)}')
     
+    # 创建模型 - 可以选择'resnet50', 'densenet121', 'efficientnet_b0'或'mamba'
     # 创建模型 - 可以选择'resnet50', 'densenet121', 'efficientnet_b0'或'mamba'
     print('Creating model...')
     # 从训练数据集中获取metadata_feature_dim
